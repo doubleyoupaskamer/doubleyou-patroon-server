@@ -1,12 +1,13 @@
 {
   "name": "doubleyou-patroon-server",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
+  "description": "DoubleYou naaipatroon server — geen externe dependencies",
   "main": "server.mjs",
-  "engines": { "node": ">=18" },
-  "dependencies": {
-    "@freesewing/titan": "^4.8.0",
-    "@freesewing/aaron": "^4.8.0",
-    "@freesewing/plugin-theme": "^4.8.0"
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
