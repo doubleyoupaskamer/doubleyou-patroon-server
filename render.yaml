@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: doubleyou-patroon-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.mjs
+    envVars:
+      - key: PORT
+        value: 3001
+    plan: free
