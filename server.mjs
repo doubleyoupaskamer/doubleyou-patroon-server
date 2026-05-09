@@ -243,18 +243,21 @@ function hoodiePatroon(m) {
   <text x="${hx+cw*0.35}" y="${hyStart+ch/2}" class="deel-lbl">4. Capuchon</text>
   <text x="${hx+cw*0.35}" y="${hyStart+ch/2+14}" class="info-lbl">knip 2×</text>
 
-  <!-- RIBBOORDEN -->
-  <rect x="${rx}" y="${ry}" width="${ribTaille}" height="${ribH}" class="naad-lijn"/>
-  <text x="${rx+8}" y="${ry+13}" class="deel-lbl">5. Tailleband</text>
-  <text x="${rx+8}" y="${ry+24}" class="info-lbl">knip 1× op vouw · rib/elastiek · ${Math.round(m.taille/2+2)}cm × 8cm</text>
+  <!-- RIBBOORDEN — elk als apart gestapeld blok -->
+  <rect x="${rx}" y="${ry}" width="220" height="60" class="naad-lijn"/>
+  <text x="${rx+8}" y="${ry+16}" class="deel-lbl">5. Tailleband</text>
+  <text x="${rx+8}" y="${ry+29}" class="info-lbl">knip 1× op vouw · rib/elastiek</text>
+  <text x="${rx+8}" y="${ry+42}" class="info-lbl">${Math.round(m.taille/2+2)}cm × 8cm</text>
 
-  <rect x="${rx+ribTaille+20}" y="${ry}" width="${ribManchet}" height="${ribH}" class="naad-lijn"/>
-  <text x="${rx+ribTaille+28}" y="${ry+13}" class="deel-lbl">6. Manchet</text>
-  <text x="${rx+ribTaille+28}" y="${ry+24}" class="info-lbl">knip 2× · rib/elastiek · 9cm × 8cm</text>
+  <rect x="${rx+240}" y="${ry}" width="200" height="60" class="naad-lijn"/>
+  <text x="${rx+248}" y="${ry+16}" class="deel-lbl">6. Manchet</text>
+  <text x="${rx+248}" y="${ry+29}" class="info-lbl">knip 4× · rib/elastiek</text>
+  <text x="${rx+248}" y="${ry+42}" class="info-lbl">9cm × 8cm</text>
 
-  <rect x="${rx+ribTaille+ribManchet+40}" y="${ry}" width="${px(14)}" height="${ribH}" class="naad-lijn"/>
-  <text x="${rx+ribTaille+ribManchet+48}" y="${ry+13}" class="deel-lbl">7. Halsboordje</text>
-  <text x="${rx+ribTaille+ribManchet+48}" y="${ry+24}" class="info-lbl">knip 1× op vouw · rib/elastiek</text>
+  <rect x="${rx+460}" y="${ry}" width="200" height="60" class="naad-lijn"/>
+  <text x="${rx+468}" y="${ry+16}" class="deel-lbl">7. Halsboordje</text>
+  <text x="${rx+468}" y="${ry+29}" class="info-lbl">knip 1× op vouw · rib</text>
+  <text x="${rx+468}" y="${ry+42}" class="info-lbl">halsomtrek × 6cm</text>
 
   ${footer(W, H)}
 </svg>`;
@@ -408,9 +411,10 @@ function broekPatroon(m) {
   <text x="${rx+8}" y="${ay+kdR+px(22)}" class="info-lbl">knip 2× (gespiegeld)</text>
 
   <!-- TAILLEBAND -->
-  <rect x="${MARG}" y="${tby}" width="${px((m.taille-(EASE[m.pasvorm]||EASE.Regular).t)/2+2)}" height="${px(5)}" class="naad-lijn"/>
-  <text x="${MARG+8}" y="${tby+13}" class="deel-lbl">3. Tailleband</text>
-  <text x="${MARG+8}" y="${tby+24}" class="info-lbl">knip 2× · ${Math.round((m.taille-(EASE[m.pasvorm]||EASE.Regular).t)/2+2)}cm × 5cm · plooirichting markeren</text>
+  <rect x="${MARG}" y="${tby}" width="260" height="68" class="naad-lijn"/>
+  <text x="${MARG+8}" y="${tby+16}" class="deel-lbl">3. Tailleband</text>
+  <text x="${MARG+8}" y="${tby+30}" class="info-lbl">knip 2× · plooirichting markeren</text>
+  <text x="${MARG+8}" y="${tby+44}" class="info-lbl">${Math.round((m.taille-(EASE[m.pasvorm]||EASE.Regular).t)/2+2)}cm × 5cm</text>
 
   ${footer(W, H)}
 </svg>`;
@@ -609,18 +613,21 @@ function tracksuitPatroon(m) {
   <text x="${brx+6}" y="${ay+kdR+px(10)}" class="deel-lbl">5. Broek rugpand</text>
   <text x="${brx+6}" y="${ay+kdR+px(22)}" class="info-lbl">knip 2× (gespiegeld)</text>
 
-  <!-- RIBBOORDEN -->
-  <rect x="${MARG}" y="${ay+Math.max(rl,kdV+bl)+35}" width="${px(m.taille/2+2)}" height="${px(8)}" class="naad-lijn"/>
-  <text x="${MARG+6}" y="${ay+Math.max(rl,kdV+bl)+49}" class="deel-lbl">6. Tailleband broek (elastisch)</text>
-  <text x="${MARG+6}" y="${ay+Math.max(rl,kdV+bl)+61}" class="info-lbl">${Math.round(m.taille/2+2)}cm × 8cm · knip 2× · rib of elastiek · vouw dubbel</text>
+  <!-- RIBBOORDEN — gestapeld per blok voor leesbaarheid -->
+  <rect x="${MARG}" y="${ay+Math.max(rl,kdV+bl)+35}" width="260" height="72" class="naad-lijn"/>
+  <text x="${MARG+8}" y="${ay+Math.max(rl,kdV+bl)+51}" class="deel-lbl">6. Tailleband broek</text>
+  <text x="${MARG+8}" y="${ay+Math.max(rl,kdV+bl)+64}" class="info-lbl">elastisch · knip 2× · vouw dubbel</text>
+  <text x="${MARG+8}" y="${ay+Math.max(rl,kdV+bl)+77}" class="info-lbl">${Math.round(m.taille/2+2)}cm × 8cm</text>
 
-  <rect x="${MARG+px(m.taille/2+2)+20}" y="${ay+Math.max(rl,kdV+bl)+35}" width="${px(9)}" height="${px(8)}" class="naad-lijn"/>
-  <text x="${MARG+px(m.taille/2+2)+28}" y="${ay+Math.max(rl,kdV+bl)+49}" class="deel-lbl">7. Manchet</text>
-  <text x="${MARG+px(m.taille/2+2)+28}" y="${ay+Math.max(rl,kdV+bl)+61}" class="info-lbl">knip 4× · 9cm × 8cm · rib</text>
+  <rect x="${MARG+280}" y="${ay+Math.max(rl,kdV+bl)+35}" width="200" height="72" class="naad-lijn"/>
+  <text x="${MARG+288}" y="${ay+Math.max(rl,kdV+bl)+51}" class="deel-lbl">7. Manchet</text>
+  <text x="${MARG+288}" y="${ay+Math.max(rl,kdV+bl)+64}" class="info-lbl">knip 4× · rib/elastiek</text>
+  <text x="${MARG+288}" y="${ay+Math.max(rl,kdV+bl)+77}" class="info-lbl">9cm × 8cm</text>
 
-  <rect x="${MARG+px(m.taille/2+2)+px(9)+40}" y="${ay+Math.max(rl,kdV+bl)+35}" width="${px(m.borst/4)}" height="${px(6)}" class="naad-lijn"/>
-  <text x="${MARG+px(m.taille/2+2)+px(9)+48}" y="${ay+Math.max(rl,kdV+bl)+49}" class="deel-lbl">8. Tailleband top (elastisch)</text>
-  <text x="${MARG+px(m.taille/2+2)+px(9)+48}" y="${ay+Math.max(rl,kdV+bl)+61}" class="info-lbl">${Math.round(m.borst/4)}cm × 6cm · knip 2× · rib</text>
+  <rect x="${MARG+500}" y="${ay+Math.max(rl,kdV+bl)+35}" width="260" height="72" class="naad-lijn"/>
+  <text x="${MARG+508}" y="${ay+Math.max(rl,kdV+bl)+51}" class="deel-lbl">8. Tailleband top</text>
+  <text x="${MARG+508}" y="${ay+Math.max(rl,kdV+bl)+64}" class="info-lbl">elastisch · knip 2× · rib</text>
+  <text x="${MARG+508}" y="${ay+Math.max(rl,kdV+bl)+77}" class="info-lbl">${Math.round(m.borst/4)}cm × 6cm</text>
 
   ${footer(W, H)}
 </svg>`;
