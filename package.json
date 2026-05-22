@@ -1,11 +1,14 @@
 {
   "name": "doubleyou-patroon-server",
-  "version": "2.0.0",
+  "version": "5.0.0",
   "type": "module",
-  "description": "DoubleYou naaipatroon server — geen externe dependencies",
+  "description": "DoubleYou naaipatroon server + video transcoding",
   "main": "server.mjs",
   "scripts": {
     "start": "node server.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
   },
   "engines": {
     "node": ">=18"
