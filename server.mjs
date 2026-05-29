@@ -50,6 +50,19 @@ function parseMultipart(req) {
   });
 }
 
+// ─── JSON body parser ─────────────────────────────────────────────────────────
+function leesJSON(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); }
+      catch (e) { reject(new Error('Ongeldige JSON: ' + e.message)); }
+    });
+    req.on('error', reject);
+  });
+}
+
 // ─── FFmpeg transcoding: HEVC/MOV → H.264 MP4 ────────────────────────────────
 function transcodeToH264(inputPath, outputPath) {
   return new Promise((resolve, reject) => {
@@ -161,7 +174,7 @@ function tracksuitPatroon(m){const W=1600,H=1080,bw=px(m.borst/4),rl=px(m.hoodie
 // BADMODE
 function badmodePatroon(m){const W=1100,H=900,bw=px(m.borst/4*0.9),rl=px(m.ruglengte*0.55),bl=px(m.been*0.55),MARG=30,ay=80,cx=MARG,cupH=px(14),cupW=px(16),cupPath=`M${cx} ${ay+cupH} Q${cx+cupW*0.3} ${ay} ${cx+cupW} ${ay} Q${cx+cupW+px(6)} ${ay+cupH*0.5} ${cx+cupW+px(4)} ${ay+cupH+px(4)} L${cx+px(4)} ${ay+cupH+px(4)} Q${cx-px(2)} ${ay+cupH*0.8} ${cx} ${ay+cupH} Z`,bandW=px(m.borst/2+2);const bix=cx+cupW+px(10)+50,biTopW=px(m.heup/4+2),biPath=`M${bix} ${ay} L${bix+biTopW} ${ay} Q${bix+biTopW+px(4)} ${ay+px(8)} ${bix+biTopW+px(2)} ${ay+px(16)} L${bix+biTopW} ${ay+bl} Q${bix+biTopW*0.8} ${ay+bl+px(10)} ${bix+biTopW/2} ${ay+bl+px(8)} Q${bix+biTopW*0.2} ${ay+bl+px(10)} ${bix} ${ay+bl} L${bix-px(2)} ${ay+px(16)} Q${bix-px(4)} ${ay+px(8)} ${bix} ${ay} Z`;const opx=bix+biTopW+px(8)+50,opPath=`M${opx+px(4)} ${ay+px(18)} Q${opx+bw*0.5} ${ay} ${opx+bw-px(4)} ${ay+px(18)} L${opx+bw} ${ay+rl} Q${opx+bw+px(10)} ${ay+rl+px(6)} ${opx+bw+px(8)} ${ay+rl+px(18)} L${opx+bw+px(4)} ${ay+rl+bl} Q${opx+bw*0.8} ${ay+rl+bl+px(10)} ${opx+bw/2} ${ay+rl+bl+px(8)} Q${opx+bw*0.2} ${ay+rl+bl+px(10)} ${opx} ${ay+rl+bl} L${opx-px(4)} ${ay+rl+px(18)} Q${opx-px(8)} ${ay+rl+px(6)} ${opx-px(10)} ${ay+rl} Z`;return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">${defs(W,H)}${header(W,`DoubleYou — Badmodepatroon (${m.pasvorm})`,`Lengte ${m.lengte}cm · Borst ${m.borstRaw}cm · Heup ${Math.round(m.heup-(EASE[m.pasvorm]||EASE.Regular).h)}cm`,`Naadtoeslag 1cm · Rekbare stof · ${m.pasvorm} pasvorm`)}<path d="${cupPath}" class="naad-lijn"/><text x="${cx+6}" y="${ay+cupH+px(10)}" class="deel-lbl">1. Bikini cup</text><text x="${cx+6}" y="${ay+cupH+px(22)}" class="info-lbl">knip 4× (stof + voering)</text><rect x="${cx}" y="${ay+cupH+px(40)}" width="${bandW}" height="${px(5)}" class="naad-lijn"/><text x="${cx+6}" y="${ay+cupH+px(53)}" class="deel-lbl">2. Bikini band</text><path d="${biPath}" class="naad-lijn"/>${grainLine(bix+biTopW/2-6,ay+px(10),bix+biTopW/2-6,ay+bl-px(4))}<text x="${bix+6}" y="${ay+bl/2+8}" class="deel-lbl">3. Bikini broekje</text><text x="${bix+6}" y="${ay+bl/2+22}" class="info-lbl">knip 2× (gespiegeld)</text><path d="${opPath}" class="naad-lijn"/>${grainLine(opx+bw/2-6,ay+px(20),opx+bw/2-6,ay+rl+bl-px(4))}<text x="${opx+6}" y="${ay+rl+px(14)}" class="deel-lbl">4. Badpak</text><text x="${opx+6}" y="${ay+rl+px(26)}" class="info-lbl">knip 2× (gespiegeld)</text>${footer(W,H)}</svg>`;}
 
-// ─── Router ───────────────────────────────────────────────────────────────────
+// ─── Patroon router ───────────────────────────────────────────────────────────
 function genereerPatroon(kledingstuk, maten) {
   switch (kledingstuk.toLowerCase()) {
     case 'hoodie':    return hoodiePatroon(maten);
@@ -173,6 +186,105 @@ function genereerPatroon(kledingstuk, maten) {
     case 'badmode':   return badmodePatroon(maten);
     default:          return hoodiePatroon(maten);
   }
+}
+
+// ─── Kleuren AI analyse (proxied naar Anthropic) ──────────────────────────────
+async function voerKleurenAnalyseUit(kleuren, afbeelding) {
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY niet geconfigureerd op server');
+  }
+
+  const prompt = `Analyseer deze outfitkleuren voor een fashion community:
+
+${kleuren}
+
+Geef een JSON-object terug met exact deze structuur:
+{
+  "harmonie_score": <0-100>,
+  "contrast_score": <0-100>,
+  "balans_score": <0-100>,
+  "seizoen": "<lente|zomer|herfst|winter|jaarrond>",
+  "stijl": "<casual|zakelijk|sportief|elegant|streetwear|bohemian|minimalistisch>",
+  "harmonie_type": "<complementair|analoog|triadisch|monochromatisch|split-complementair|accentkleur>",
+  "positief": ["<zin1>", "<zin2>", "<zin3>"],
+  "verbeterpunten": ["<punt1>", "<punt2>"],
+  "alternatieven": [{"kleur": "<naam>", "hex": "<hex>", "reden": "<korte uitleg>"}],
+  "samenvatting": "<2 zinnen fashion-stijl samenvatting>"
+}
+
+Schrijf alle tekst in correct Nederlands. Wees concreet, fashion-forward en positief. Alleen JSON, geen uitleg.`;
+
+  // Bouw messages op — met of zonder afbeelding
+  let messages;
+  if (afbeelding && typeof afbeelding === 'string' && afbeelding.length > 100) {
+    messages = [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: afbeelding } },
+        { type: 'text', text: prompt }
+      ]
+    }];
+  } else {
+    messages = [{ role: 'user', content: prompt }];
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 28000);
+
+  let anthropicRes;
+  try {
+    anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 700,
+        messages
+      })
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!anthropicRes.ok) {
+    const errBody = await anthropicRes.text().catch(() => '');
+    console.error(`[/analyse] Anthropic HTTP ${anthropicRes.status}:`, errBody.slice(0, 200));
+    if (anthropicRes.status === 429) throw new Error('rate_limited');
+    throw new Error(`anthropic_${anthropicRes.status}`);
+  }
+
+  const data = await anthropicRes.json();
+  const text = (data.content && data.content[0] && data.content[0].text) || '';
+  if (!text) throw new Error('empty_response');
+
+  // Extraheer JSON
+  const start = text.indexOf('{');
+  const end   = text.lastIndexOf('}');
+  if (start < 0 || end <= start) throw new Error('no_json');
+
+  const parsed = JSON.parse(text.substring(start, end + 1));
+
+  // Schema sanitatie
+  const defaults = {
+    harmonie_score: 70, contrast_score: 65, balans_score: 68,
+    seizoen: 'jaarrond', stijl: 'casual', harmonie_type: 'analoog',
+    positief: ['Goed kleurgebruik'], verbeterpunten: [],
+    alternatieven: [], samenvatting: 'Een mooie outfit combinatie.'
+  };
+  for (const k of Object.keys(defaults)) {
+    if (parsed[k] === undefined || parsed[k] === null) parsed[k] = defaults[k];
+  }
+  for (const k of ['harmonie_score', 'contrast_score', 'balans_score']) {
+    parsed[k] = Math.max(0, Math.min(100, parseInt(parsed[k]) || defaults[k]));
+  }
+
+  return parsed;
 }
 
 // ─── HTTP Server ──────────────────────────────────────────────────────────────
@@ -189,7 +301,7 @@ const server = createServer(async (req, res) => {
   // ── GET / ─────────────────────────────────────────────────────────────────
   if (req.method === 'GET' && req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', service: 'DoubleYou Patroon Server', version: '5.0.0', ffmpeg: !!ffmpegPath }));
+    res.end(JSON.stringify({ status: 'ok', service: 'DoubleYou Patroon Server', version: '6.0.0', ffmpeg: !!ffmpegPath }));
     return;
   }
 
@@ -216,6 +328,49 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // ── POST /analyse — Kleuren AI analyse (Anthropic proxy) ──────────────────
+  if (req.method === 'POST' && req.url === '/analyse') {
+    let body;
+    try {
+      body = await leesJSON(req);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ fout: 'Ongeldige JSON in verzoek.' }));
+      return;
+    }
+
+    const { kleuren, afbeelding } = body;
+    if (!kleuren || typeof kleuren !== 'string' || kleuren.trim().length < 5) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ fout: 'Kleurendata ontbreekt of ongeldig.' }));
+      return;
+    }
+
+    try {
+      const resultaat = await voerKleurenAnalyseUit(kleuren.trim(), afbeelding || null);
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ resultaat }));
+    } catch (e) {
+      console.error('[/analyse] Fout:', e.message);
+
+      const foutBericht = {
+        rate_limited:   'Analyse-service is tijdelijk bezet. Even wachten en opnieuw proberen.',
+        empty_response: 'Analyse-service gaf geen bruikbaar antwoord. Probeer opnieuw.',
+        no_json:        'Analyse-service gaf een onverwacht antwoord. Probeer opnieuw.',
+      }[e.message] || (e.name === 'AbortError'
+        ? 'Analyse duurde te lang. Probeer een kleinere foto.'
+        : 'Analyse tijdelijk niet beschikbaar. Probeer opnieuw.');
+
+      const statusCode = e.message === 'rate_limited' ? 429
+        : e.name === 'AbortError' ? 504
+        : 502;
+
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ fout: foutBericht }));
+    }
+    return;
+  }
+
   // ── POST /transcode — HEVC/MOV video → H.264 MP4 ─────────────────────────
   if (req.method === 'POST' && req.url === '/transcode') {
     const id = randomUUID();
@@ -233,7 +388,6 @@ const server = createServer(async (req, res) => {
 
       console.log(`[transcode] Ontvangen: ${videoPart.filename || 'video'} (${Math.round(videoPart.data.length/1024)}KB)`);
 
-      // Schrijf naar temp bestand
       await new Promise((resolve, reject) => {
         const ws = createWriteStream(tmpIn);
         ws.on('finish', resolve);
@@ -241,10 +395,8 @@ const server = createServer(async (req, res) => {
         ws.end(videoPart.data);
       });
 
-      // Transcodeer naar H.264 MP4
       await transcodeToH264(tmpIn, tmpOut);
 
-      // Stuur MP4 terug
       const { statSync } = await import('node:fs');
       const stat = statSync(tmpOut);
       res.writeHead(200, {
@@ -274,6 +426,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`DoubleYou Patroon Server v5.0 draait op poort ${PORT}`);
+  console.log(`DoubleYou Patroon Server v6.0 draait op poort ${PORT}`);
   console.log(`FFmpeg: ${ffmpegPath || 'NIET GEVONDEN'}`);
+  console.log(`Kleuren AI: ${process.env.ANTHROPIC_API_KEY ? 'geconfigureerd ✓' : 'ANTHROPIC_API_KEY ontbreekt ✗'}`);
 });
